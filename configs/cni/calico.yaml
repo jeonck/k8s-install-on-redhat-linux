@@ -1,0 +1,67 @@
+# Calico CNI configuration for Kubernetes
+# This is a template for Calico custom resources
+# The actual installation uses the Tigera operator
+
+# Note: This file is generated dynamically by setup-master-node.sh
+# The pod network CIDR is configured based on the --pod-network-cidr parameter
+
+---
+apiVersion: operator.tigera.io/v1
+kind: Installation
+metadata:
+  name: default
+spec:
+  # Configures Calico networking.
+  calicoNetwork:
+    # Note: The cluster CIDR should not overlap with existing network CIDRs
+    ipPools:
+    - blockSize: 26
+      cidr: 10.244.0.0/16  # This will be replaced with actual CIDR
+      encapsulation: VXLANCrossSubnet
+      natOutgoing: Enabled
+      nodeSelector: all()
+
+---
+apiVersion: operator.tigera.io/v1
+kind: APIServer
+metadata:
+  name: default
+spec: {}
+
+---
+# Optional: Configure Calico for specific network requirements
+# apiVersion: operator.tigera.io/v1
+# kind: Installation
+# metadata:
+#   name: default
+# spec:
+#   # Variant is one of: Calico, TigeraSecureEnterprise
+#   variant: Calico
+#   
+#   # Configures Calico networking.
+#   calicoNetwork:
+#     # Configures the default IPv4 pool for the cluster.
+#     ipPools:
+#     - blockSize: 26
+#       cidr: 10.244.0.0/16
+#       encapsulation: VXLANCrossSubnet
+#       natOutgoing: Enabled
+#       nodeSelector: all()
+#       
+#     # Configures the MTU to use for workload interfaces and tunnels
+#     mtu: 1440
+#     
+#     # Configure the node-to-node mesh
+#     nodeToNodeMeshEnabled: true
+#     
+#   # Configures the node affinity for Calico pods
+#   nodeSelector: kubernetes.io/os == "linux"
+#   
+#   # Resources for the Calico node, typha and kube-controllers components
+#   # nodeUpdateStrategy:
+#   #   type: RollingUpdate
+#   #   rollingUpdate:
+#   #     maxUnavailable: 1
+#   
+#   # Configure FlexVolume
+#   flexVolumePath: /usr/libexec/kubernetes/kubelet-plugins/volume/exec/

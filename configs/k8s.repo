@@ -1,0 +1,21 @@
+# Kubernetes YUM repository configuration
+# This file should be placed in /etc/yum.repos.d/kubernetes.repo
+
+[kubernetes]
+name=Kubernetes
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/
+enabled=1
+gpgcheck=1
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/repodata/repomd.xml.key
+exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+
+# Note: Change v1.29 to your desired Kubernetes version
+# Available versions can be found at: https://pkgs.k8s.io/core:/stable:/
+# 
+# To use a different version, update both:
+# - baseurl=https://pkgs.k8s.io/core:/stable:/v1.XX/rpm/
+# - gpgkey=https://pkgs.k8s.io/core:/stable:/v1.XX/rpm/repodata/repomd.xml.key
+#
+# Example for v1.30:
+# baseurl=https://pkgs.k8s.io/core:/stable:/v1.30/rpm/
+# gpgkey=https://pkgs.k8s.io/core:/stable:/v1.30/rpm/repodata/repomd.xml.key
