@@ -26,13 +26,25 @@ check_os_compatibility() {
     os_info=$(cat /etc/redhat-release)
     log "OS: $os_info"
     
+    local issues=0
+    
     if grep -q "CentOS\|Red Hat\|Rocky\|Fedora" /etc/redhat-release; then
         log "✓ OS is compatible"
-        return 0
+        
+        # Check specific version requirements for Kubernetes 1.33
+        if grep -q "Red Hat.*release 8\.[0-5]" /etc/redhat-release; then
+            warning "✗ RHEL 8.0-8.5 detected. RHEL 8.6+ recommended for Kubernetes 1.33"
+            issues=$((issues + 1))
+        elif grep -q "Red Hat.*release 9\.[01]" /etc/redhat-release; then
+            warning "✗ RHEL 9.0-9.1 detected. RHEL 9.2+ recommended for Kubernetes 1.33"
+            issues=$((issues + 1))
+        fi
     else
         error "✗ Unsupported OS version"
         return 1
     fi
+    
+    return $issues
 }
 
 check_system_resources() {
@@ -201,6 +213,52 @@ check_sysctl_parameters() {
     return $issues
 }
 
+check_kernel_version() {
+    log "Checking kernel version for Kubernetes 1.33..."
+    
+    local issues=0
+    local kernel_version
+    kernel_version=$(uname -r | cut -d- -f1)
+    local kernel_major=$(echo "$kernel_version" | cut -d. -f1)
+    local kernel_minor=$(echo "$kernel_version" | cut -d. -f2)
+    
+    log "Kernel version: $(uname -r)"
+    
+    # Special handling for RHEL 8.x with 4.18 kernel
+    if [[ $kernel_major -eq 4 && $kernel_minor -eq 18 ]] && grep -q "Red Hat.*release 8" /etc/redhat-release 2>/dev/null; then
+        warning "! RHEL 8.x detected with kernel 4.18"
+        log "  Red Hat backports features to 4.18 - some Kubernetes 1.33 features may work"
+        log "  Consider testing in development environment first"
+        log "  For production, RHEL 9.2+ (kernel 5.14+) is recommended"
+        issues=$((issues + 1))
+    # Check for Kubernetes 1.33 requirements
+    elif [[ $kernel_major -lt 5 ]] || [[ $kernel_major -eq 5 && $kernel_minor -lt 13 ]]; then
+        if [[ $kernel_major -lt 5 ]] || [[ $kernel_major -eq 5 && $kernel_minor -lt 4 ]]; then
+            error "✗ Kernel $kernel_version is too old. Minimum 5.4+ required for Kubernetes 1.33"
+            issues=$((issues + 2))
+        else
+            warning "✗ Kernel $kernel_version < 5.13. nftables mode will be limited (development only)"
+            log "  Production environments should use kernel 5.13+"
+            issues=$((issues + 1))
+        fi
+    else
+        log "✓ Kernel version meets Kubernetes 1.33 requirements"
+    fi
+    
+    # Check for nftables tool if kernel supports it
+    if command -v nft >/dev/null 2>&1; then
+        local nft_version
+        nft_version=$(nft --version 2>/dev/null | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
+        if [[ -n "$nft_version" ]]; then
+            log "✓ nftables tool found (version: $nft_version)"
+        fi
+    else
+        warning "! nftables tool (nft) not found - may be needed for kube-proxy nftables mode"
+    fi
+    
+    return $issues
+}
+
 check_existing_installations() {
     log "Checking for existing installations..."
     
@@ -255,11 +313,12 @@ generate_report() {
 }
 
 main() {
-    log "Starting Kubernetes system compatibility check..."
+    log "Starting Kubernetes 1.33 system compatibility check..."
     
     local total_issues=0
     
     check_os_compatibility || total_issues=$((total_issues + $?))
+    check_kernel_version || total_issues=$((total_issues + $?))
     check_system_resources || total_issues=$((total_issues + $?))
     check_network_connectivity || total_issues=$((total_issues + $?))
     check_required_ports || total_issues=$((total_issues + $?))

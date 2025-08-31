@@ -3,8 +3,10 @@
 ## 지원 운영체제
 
 ### Red Hat Enterprise Linux (RHEL)
-- RHEL 8.x (8.4 이상 권장)
-- RHEL 9.x (9.0 이상)
+- RHEL 8.x (8.6 이상 권장, Kubernetes 1.33용)
+- RHEL 9.x (9.2 이상 권장, Kubernetes 1.33용)
+
+> **Kubernetes 1.33 호환성**: RHEL 8.6+ 또는 9.2+ 사용 권장
 
 ### CentOS
 - CentOS Stream 8 (8-stream)
@@ -115,13 +117,37 @@
 ## 소프트웨어 요구사항
 
 ### 커널 버전
+
+#### Kubernetes 1.33 요구사항
+- **nftables 모드 (프로덕션)**: Linux 커널 5.13+ **필수**
+- **테스트/개발 환경**: Linux 커널 5.4+ (프로덕션 비권장)
+- **PSI 기능 사용시**: Linux 커널 4.20+ (`CONFIG_PSI=y`)
+
+#### RHEL 8.x 커널 호환성
+- **RHEL 8.x 기본 커널**: 4.18 기반 (모든 마이너 버전)
+  - RHEL 8.6: 4.18.0-372.x
+  - RHEL 8.8: 4.18.0-477.x  
+  - RHEL 8.10: 4.18.0-5xx.x
+- **백포팅 기능**: Red Hat이 5.x 기능을 4.18에 백포팅
+- **nftables 지원**: 백포팅을 통해 제한적 지원 가능
+
+#### 일반 요구사항
 - **최소**: Linux 커널 3.10 이상
-- **권장**: Linux 커널 4.15 이상
-- **최신**: Linux 커널 5.x 시리즈
+- **권장**: Linux 커널 5.13 이상 (Kubernetes 1.33)
+- **RHEL 특이사항**: 백포팅으로 인해 커널 버전만으로는 판단 어려움
+
+> **주의**: 
+> - kube-proxy nftables 모드 사용시 커널 5.13+ 및 nft 1.0.1+ 필요
+> - RHEL 8.x는 4.18 커널이지만 백포팅된 기능으로 일부 지원 가능
+> - 프로덕션 환경에서는 RHEL 9.2+ (커널 5.14 기반) 권장
 
 ### 필수 커널 모듈
 - `overlay`: OverlayFS 파일 시스템
 - `br_netfilter`: 브리지 네트워크 필터링
+
+### 필수 시스템 도구 (Kubernetes 1.33)
+- `nft`: nftables 명령줄 도구 v1.0.1+ (nftables 모드 사용시)
+- `containerd`: 컨테이너 런타임 (RHEL 8/9에서 Docker 대신 필수)
 
 ### 시스템 설정
 

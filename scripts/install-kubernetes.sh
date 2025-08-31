@@ -3,7 +3,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-K8S_VERSION=${K8S_VERSION:-"1.29"}
+K8S_VERSION=${K8S_VERSION:-"1.33"}
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"

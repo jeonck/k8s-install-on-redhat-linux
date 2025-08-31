@@ -4,7 +4,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 POD_NETWORK_CIDR=${POD_NETWORK_CIDR:-"10.244.0.0/16"}
-CNI_PLUGIN=${CNI_PLUGIN:-"flannel"}
+CNI_PLUGIN=${CNI_PLUGIN:-"calico"}
 CONTROL_PLANE_ENDPOINT=${CONTROL_PLANE_ENDPOINT:-""}
 
 log() {

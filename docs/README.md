@@ -1,15 +1,29 @@
-# Kubernetes Installation on Red Hat Linux with containerd
+# Kubernetes 1.33 Installation on Red Hat Linux with containerd
 
-이 프로젝트는 Red Hat 기반 Linux 배포판(RHEL, CentOS, Rocky Linux, Fedora)에서 containerd 런타임을 사용하여 Kubernetes 클러스터를 설치하는 자동화 스크립트를 제공합니다.
+이 프로젝트는 Red Hat 기반 Linux 배포판에서 containerd 런타임을 사용하여 Kubernetes 1.33 클러스터를 설치하는 자동화 스크립트를 제공합니다.
 
 ## 지원 운영체제
 
-- Red Hat Enterprise Linux (RHEL) 8/9
+### Kubernetes 1.33 호환성
+- Red Hat Enterprise Linux (RHEL) 8.6+ / 9.2+
 - CentOS Stream 8/9  
-- Rocky Linux 8/9
+- Rocky Linux 8.6+ / 9.2+
 - Fedora 37+
 
+> **중요**: Kubernetes 1.33 사용시 커널 5.13+ 권장 (nftables 모드)
+
 ## 시스템 요구사항
+
+### Kubernetes 1.33 특수 요구사항
+- **커널**: 5.13+ (프로덕션), 5.4+ (개발/테스트)
+- **RHEL 8.x**: 4.18 커널이지만 백포팅으로 제한적 지원
+- **nftables**: v1.0.1+ (nftables 모드 사용시)
+- **컨테이너 런타임**: containerd (Docker 지원 안함)
+
+> **RHEL 8.x 사용자 주의사항**: 
+> - RHEL 8.x는 4.18 커널을 사용하지만 Red Hat의 백포팅으로 일부 기능 지원
+> - 개발/테스트 환경에서 먼저 검증 후 사용 권장
+> - 프로덕션 환경에서는 RHEL 9.2+ (5.14 커널) 사용 권장
 
 ### 마스터 노드
 - CPU: 2코어 이상
