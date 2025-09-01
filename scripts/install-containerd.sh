@@ -10,7 +10,7 @@ COMPATIBILITY_SETS=(
     "1.7.22:1.1.14:1.7.22:Latest Stable (Default) - Kubernetes 1.30+"
     "1.7.20:1.1.12:1.7.20:Stable LTS - Kubernetes 1.28+"
     "1.6.33:1.1.12:1.6.33:Legacy Stable - Kubernetes 1.26+"
-    "1.6.28:1.1.9:1.6.28:RHEL 8.10 Tested - Kubernetes 1.30"
+    "1.7.27:1.1.12:1.7.27:RHEL 8.10 Optimized - Kubernetes 1.30"
     "latest:latest:latest:Latest Available (Not recommended for production)"
 )
 

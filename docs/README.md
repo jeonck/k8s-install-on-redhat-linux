@@ -118,7 +118,7 @@ sudo ./scripts/install-containerd.sh --set 3
 ```
 
 ### 권장 세트
-- **RHEL 8.10**: 세트 3 (RHEL 8.10 Tested)
+- **RHEL 8.10**: 세트 3 (RHEL 8.10 Optimized)
 - **RHEL 9.x**: 세트 0 (Latest Stable) 또는 1 (Stable LTS)
 - **프로덕션**: 세트 1 (Stable LTS)
 

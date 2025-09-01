@@ -27,12 +27,12 @@
 - **용도**: Kubernetes 1.26+ 환경에서 레거시 지원
 - **권장 대상**: 기존 클러스터 유지보수
 
-### 세트 3: RHEL 8.10 Tested
-- **containerd**: 1.6.28
-- **runc**: 1.1.9
-- **ctr**: 1.6.28
-- **용도**: RHEL 8.10 + Kubernetes 1.30 조합에서 검증됨
-- **권장 대상**: RHEL 8.10 사용자
+### 세트 3: RHEL 8.10 Optimized
+- **containerd**: 1.7.27
+- **runc**: 1.1.12
+- **ctr**: 1.7.27
+- **용도**: RHEL 8.10 + Kubernetes 1.30 최적화 조합
+- **권장 대상**: RHEL 8.10 사용자 (Docker 공식 지원)
 
 ### 세트 4: Latest Available
 - **containerd**: latest
@@ -70,7 +70,7 @@ sudo ./scripts/install-containerd.sh --help
 ## 선택 가이드
 
 ### RHEL/CentOS 8.x 사용자
-- **RHEL 8.10**: 세트 3 (RHEL 8.10 Tested) 권장
+- **RHEL 8.10**: 세트 3 (RHEL 8.10 Optimized) 권장
 - **RHEL 8.x 기타**: 세트 1 (Stable LTS) 권장
 
 ### RHEL/CentOS 9.x 사용자
@@ -90,7 +90,7 @@ sudo ./scripts/install-containerd.sh --help
 | 0    | 1.7.22     | 1.1.14 | 1.30+    | ⚠️       | ✅       | 높음   |
 | 1    | 1.7.20     | 1.1.12 | 1.28+    | ✅       | ✅       | 매우높음|
 | 2    | 1.6.33     | 1.1.12 | 1.26+    | ✅       | ✅       | 높음   |
-| 3    | 1.6.28     | 1.1.9  | 1.30     | ✅✅     | ✅       | RHEL8최적화|
+| 3    | 1.7.27     | 1.1.12 | 1.30     | ✅✅     | ✅       | RHEL8최적화|
 | 4    | latest     | latest | 최신     | ❓       | ❓       | 낮음   |
 
 범례:
