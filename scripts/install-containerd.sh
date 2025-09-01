@@ -10,7 +10,7 @@ COMPATIBILITY_SETS=(
     "1.7.22:1.1.14:1.7.22:Latest Stable (Default) - Kubernetes 1.30+"
     "1.7.20:1.1.12:1.7.20:Stable LTS - Kubernetes 1.28+"
     "1.6.33:1.1.12:1.6.33:Legacy Stable - Kubernetes 1.26+"
-    "1.7.27:1.1.12:1.7.27:RHEL 8.10 Optimized - Kubernetes 1.30"
+    "1.7.27:1.1.12:1.7.27:RHEL 8.10 Limited Compatibility - RPM Package Recommended"
     "latest:latest:latest:Latest Available (Not recommended for production)"
 )
 
@@ -76,6 +76,11 @@ show_compatibility_sets() {
         if [[ "$runc_ver" =~ ^1\.1\. ]]; then
             echo "      ⚠️  runc 1.1.x is no longer supported (security risk)"
         fi
+        
+        # Show glibc compatibility warnings for Set 3
+        if [[ "$i" == "3" ]]; then
+            echo "      ⚠️  glibc 2.28 limited compatibility - RPM package strongly recommended"
+        fi
     done
     echo ""
     echo "Usage: CONTAINERD_SET=1 ./install-containerd.sh"
@@ -110,11 +115,13 @@ show_download_info() {
     
     # glibc compatibility information
     if [[ "$CONTAINERD_SET" == "3" ]]; then
-        echo "glibc Compatibility (Set 3 - RHEL 8.10 Optimized):"
-        echo "  RHEL 8.10 glibc: 2.28 (verified compatible)"
-        echo "  containerd 1.7.27: Full support via static binaries or RPM"
+        echo "glibc Compatibility (Set 3 - RHEL 8.10 Limited Compatibility):"
+        echo "  RHEL 8.10 glibc: 2.28 (below containerd 1.7.27 official requirement)"
+        echo "  containerd 1.7.27 official: Requires glibc 2.35 (dynamic binaries)"
+        echo "  containerd 1.7.27 static: Limited support for glibc < 2.35"
         echo "  runc 1.1.12: Verified compatibility with RHEL 8 ecosystem"
-        echo "  Recommended: Use RPM package for optimal integration"
+        echo "  STRONGLY RECOMMENDED: Use RPM package (containerd.io) for RHEL 8"
+        echo "  WARNING: Static binaries have limitations (not position-independent)"
         echo ""
     fi
     

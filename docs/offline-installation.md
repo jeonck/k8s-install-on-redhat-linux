@@ -15,10 +15,10 @@
 
 ### RHEL 8.10 + Kubernetes 1.30 권장 조합 (검증됨)
 - **OS**: RHEL 8.10 (커널 4.18.0-553, glibc 2.28)
-- **containerd**: 1.7.27 (LTS, Docker 공식 지원, glibc 2.28 완전 호환)
+- **containerd**: 1.7.27 (LTS, Docker 공식 지원, RPM 패키지 권장)
 - **runc**: 1.1.12 (보안 패치 포함, RHEL 8 검증된 호환성)
 - **Kubernetes**: 1.30.x
-- **glibc 호환성**: 완전 검증됨 (glibc 2.28 지원)
+- **glibc 호환성**: 제한적 (정적 바이너리), RPM 패키지 최적화됨
 
 > ⚠️ **보안 알림**: runc 1.1.x는 공식 지원 종료. 1.2.x 이상으로 업그레이드 권장
 
@@ -26,24 +26,32 @@
 
 ### containerd 다운로드
 
-#### 방법 1: RPM 패키지 (RHEL 8.10 권장)
+#### 방법 1: RPM 패키지 (강력 권장 - RHEL 8.10 최적화)
 ```bash
-# RHEL 8.10 glibc 2.28 최적화 RPM 패키지
+# RHEL 8.10에서 가장 안정적인 설치 방식
+# Docker가 RHEL 8용으로 최적화한 RPM 패키지
 wget https://download.docker.com/linux/rhel/8/x86_64/stable/Packages/containerd.io-1.7.27-3.1.el8.x86_64.rpm
+
+# 설치 및 의존성 자동 처리
+sudo dnf install -y ./containerd.io-1.7.27-3.1.el8.x86_64.rpm
 ```
 
-#### 방법 2: 정적 바이너리 (glibc 2.28 호환)
+#### 방법 2: 정적 바이너리 (오프라인 환경 전용)
 ```bash
-# containerd 1.7.27 정적 바이너리 (RHEL 8.10 glibc 2.28 완전 호환)
+# ⚠️ 주의사항:
+# - position-independent 미지원
+# - runc, CNI 플러그인 별도 설치 필요
+# - 제한적 glibc 2.28 호환성
+
 wget https://github.com/containerd/containerd/releases/download/v1.7.27/containerd-static-1.7.27-linux-amd64.tar.gz
 wget https://github.com/containerd/containerd/releases/download/v1.7.27/containerd-static-1.7.27-linux-amd64.tar.gz.sha256sum
 ```
 
-#### 방법 3: 일반 바이너리 (참고용)
+#### 방법 3: 일반 바이너리 (호환 불가)
 ```bash
-# containerd 1.7.27 일반 바이너리 (높은 glibc 요구 가능성)
-wget https://github.com/containerd/containerd/releases/download/v1.7.27/containerd-1.7.27-linux-amd64.tar.gz
-wget https://github.com/containerd/containerd/releases/download/v1.7.27/containerd-1.7.27-linux-amd64.tar.gz.sha256sum
+# ❌ RHEL 8.10에서 사용 불가 (glibc 2.35 필요)
+# containerd 1.7.27 동적 바이너리는 glibc 2.35 이상 필요
+# wget https://github.com/containerd/containerd/releases/download/v1.7.27/containerd-1.7.27-linux-amd64.tar.gz  # 사용 금지
 ```
 
 ### runc 다운로드
@@ -251,27 +259,36 @@ sudo kubeadm init \
 
 ## glibc 호환성 및 보안 고려사항
 
-### RHEL 8.10 glibc 2.28 호환성 검증
-RHEL 8.10 + containerd 1.7.27 + runc 1.1.12 조합의 glibc 호환성이 완전히 검증되었습니다:
+### RHEL 8.10 glibc 2.28 호환성 눆의 (2025년 기준)
+RHEL 8.10 + containerd 1.7.27 + runc 1.1.12 조합의 glibc 호환성은 제한적이며 신중한 접근이 필요합니다:
 
-**호환성 확인 결과**:
+**호환성 분석 결과**:
 - **RHEL 8.10**: glibc 2.28 표준 탑재
-- **containerd 1.7.27**: 정적 바이너리로 glibc 2.28 완전 지원
-- **runc 1.1.12**: RHEL 8 컨테이너 에코시스템에서 검증된 호환성
-- **권장 설치**: RPM 패키지 방식 (RHEL 8 최적화)
+- **containerd 1.7.27 공식 요구사항**: glibc 2.35 이상 (동적 바이너리)
+- **정적 바이너리**: glibc 2.35 미만 배포판용으로 제공 (제한적 지원)
+- **runc 1.1.12**: RHEL 8 에코시스템에서 검증된 호환성
+- **최선의 선택**: RPM 패키지 방식 (Docker의 RHEL 8 최적화)
 
-**최적 설치 검증 방법**:
+**호호성 및 안정성 검증 방법**:
 ```bash
-# glibc 버전 확인
+# 1. 시스템 glibc 버전 확인
 ldd --version
+# 기대값: glibc 2.28
 
-# 설치 후 버전 검증
-containerd --version  # v1.7.27
-runc --version        # 1.1.12
+# 2. containerd 공식 요구사항 확인
+# containerd 1.7.27 동적 바이너리는 glibc 2.35 필요
 
-# 호환성 테스트
-sudo ctr version
+# 3. 설치 후 버전 검증
+containerd --version  # v1.7.27 확인
+runc --version        # 1.1.12 확인
+
+# 4. 서비스 상태 및 기능 테스트
 sudo systemctl status containerd
+sudo ctr version  # 정상 동작 확인
+sudo ctr images list  # 이미지 관리 기능 테스트
+
+# 5. RPM 패키지 설치 확인 (권장 방식)
+rpm -qa | grep containerd  # RPM으로 설치되었는지 확인
 ```
 
 ### runc 업그레이드 권장

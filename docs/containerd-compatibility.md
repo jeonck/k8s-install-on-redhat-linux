@@ -33,7 +33,7 @@
 - **ctr**: 1.7.27
 - **용도**: RHEL 8.10 + Kubernetes 1.30 최적화 조합
 - **권장 대상**: RHEL 8.10 사용자 (Docker 공식 지원)
-- **glibc 호환성**: RHEL 8.10 glibc 2.28과 완전 호환
+- **glibc 호환성**: RHEL 8.10 glibc 2.28과 제한적 호환 (RPM 패키지 권장)
 
 ### 세트 4: Latest Available
 - **containerd**: latest
@@ -95,7 +95,7 @@ sudo ./scripts/install-containerd.sh --help
 | 4    | latest     | latest | 최신     | ❓       | ❓       | 낮음   |
 
 범례:
-- ✅ 완전 호환 및 권장
+- ✅ 호환 및 권장
 - ⚠️ 호환 가능하나 주의 필요  
 - ❓ 테스트되지 않음
 - ✅✅ 특별히 최적화됨
@@ -116,23 +116,27 @@ OFFLINE_MODE=true sudo ./scripts/install-containerd.sh --set 3
 
 ## glibc 호환성 정보
 
-### RHEL 8.10 최적 호환성
-세트 3은 RHEL 8.10의 glibc 2.28과 완벽 호환되도록 검증되었습니다:
+### RHEL 8.10 호환성 (제한적)
+세트 3은 RHEL 8.10 환경에서 신중한 설치 방법 선택이 필요합니다:
 
-**호환성 검증 결과**:
-- **RHEL 8.10 glibc**: 2.28 (RHEL 8 계열 표준)
-- **containerd 1.7.27**: 정적 바이너리로 glibc 2.28 완전 지원
+**호환성 분석 결과**:
+- **RHEL 8.10 glibc**: 2.28 (containerd 공식 요구사항 glibc 2.35 미만)
+- **containerd 1.7.27**: 동적 바이너리는 glibc 2.35 필요, 정적 바이너리는 제한적 지원
 - **runc 1.1.12**: RHEL 8 에코시스템에서 검증된 호환성
-- **설치 방법**: RPM 패키지 또는 정적 바이너리 모두 지원
+- **권장 설치 방법**: RPM 패키지 (Docker 공식 RHEL 8 지원)
 
-**최적 설치 방식**:
+**권장 설치 방식 우선순위**:
 ```bash
-# RPM 패키지 방식 (권장)
+# 1순위: RPM 패키지 방식 (강력 권장 - RHEL 8 최적화)
 wget https://download.docker.com/linux/rhel/8/x86_64/stable/Packages/containerd.io-1.7.27-3.1.el8.x86_64.rpm
 sudo dnf install -y ./containerd.io-1.7.27-3.1.el8.x86_64.rpm
 
-# 정적 바이너리 방식 (오프라인 환경)
+# 2순위: 정적 바이너리 방식 (오프라인 환경, 주의사항 숙지 필요)
+# ⚠️ 주의: position-independent 미지원, 별도 runc/CNI 설치 필요
 wget https://github.com/containerd/containerd/releases/download/v1.7.27/containerd-static-1.7.27-linux-amd64.tar.gz
+
+# 3순위: 동적 바이너리 (호환 불가능 - glibc 2.35 필요)
+# ❌ RHEL 8.10에서 사용 불가
 ```
 
 ## 보안 권장사항
