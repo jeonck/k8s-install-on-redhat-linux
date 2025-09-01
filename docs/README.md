@@ -104,6 +104,26 @@ Options:
 sudo ./scripts/setup-master-node.sh --pod-network-cidr 192.168.0.0/16 --cni-plugin calico
 ```
 
+## Containerd 호환성 세트
+
+스크립트는 검증된 containerd, runc, ctr 버전 조합을 제공합니다:
+
+### 사용 가능한 세트
+```bash
+# 호환성 세트 목록 보기
+sudo ./scripts/install-containerd.sh --list-sets
+
+# 특정 세트 선택 (예: RHEL 8.10 최적화)
+sudo ./scripts/install-containerd.sh --set 3
+```
+
+### 권장 세트
+- **RHEL 8.10**: 세트 3 (RHEL 8.10 Tested)
+- **RHEL 9.x**: 세트 0 (Latest Stable) 또는 1 (Stable LTS)
+- **프로덕션**: 세트 1 (Stable LTS)
+
+자세한 내용은 [containerd 호환성 가이드](containerd-compatibility.md)를 참조하세요.
+
 ## CNI 플러그인
 
 ### Flannel (기본값)

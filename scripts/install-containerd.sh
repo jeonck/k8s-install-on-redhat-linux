@@ -4,6 +4,19 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Containerd compatibility sets
+# Format: CONTAINERD_VERSION:RUNC_VERSION:CTR_VERSION:DESCRIPTION
+COMPATIBILITY_SETS=(
+    "1.7.22:1.1.14:1.7.22:Latest Stable (Default) - Kubernetes 1.30+"
+    "1.7.20:1.1.12:1.7.20:Stable LTS - Kubernetes 1.28+"
+    "1.6.33:1.1.12:1.6.33:Legacy Stable - Kubernetes 1.26+"
+    "1.6.28:1.1.9:1.6.28:RHEL 8.10 Tested - Kubernetes 1.30"
+    "latest:latest:latest:Latest Available (Not recommended for production)"
+)
+
+# Default compatibility set (index 0)
+CONTAINERD_SET=${CONTAINERD_SET:-"0"}
+
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
@@ -11,6 +24,48 @@ log() {
 error() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $1" >&2
     exit 1
+}
+
+warning() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARNING: $1" >&2
+}
+
+show_compatibility_sets() {
+    echo ""
+    log "Available containerd compatibility sets:"
+    echo ""
+    for i in "${!COMPATIBILITY_SETS[@]}"; do
+        local set_info="${COMPATIBILITY_SETS[$i]}"
+        local containerd_ver=$(echo "$set_info" | cut -d: -f1)
+        local runc_ver=$(echo "$set_info" | cut -d: -f2)
+        local ctr_ver=$(echo "$set_info" | cut -d: -f3)
+        local description=$(echo "$set_info" | cut -d: -f4)
+        
+        if [[ "$i" == "$CONTAINERD_SET" ]]; then
+            echo "  [$i] * containerd $containerd_ver + runc $runc_ver + ctr $ctr_ver"
+        else
+            echo "  [$i]   containerd $containerd_ver + runc $runc_ver + ctr $ctr_ver"
+        fi
+        echo "      → $description"
+    done
+    echo ""
+    echo "Usage: CONTAINERD_SET=1 ./install-containerd.sh"
+    echo "Current selection: Set $CONTAINERD_SET"
+}
+
+parse_compatibility_set() {
+    if [[ $CONTAINERD_SET =~ ^[0-9]+$ ]] && [[ $CONTAINERD_SET -lt ${#COMPATIBILITY_SETS[@]} ]]; then
+        local set_info="${COMPATIBILITY_SETS[$CONTAINERD_SET]}"
+        CONTAINERD_VERSION=$(echo "$set_info" | cut -d: -f1)
+        RUNC_VERSION=$(echo "$set_info" | cut -d: -f2)
+        CTR_VERSION=$(echo "$set_info" | cut -d: -f3)
+        SET_DESCRIPTION=$(echo "$set_info" | cut -d: -f4)
+        
+        log "Selected compatibility set $CONTAINERD_SET: $SET_DESCRIPTION"
+        log "Versions: containerd $CONTAINERD_VERSION, runc $RUNC_VERSION, ctr $CTR_VERSION"
+    else
+        error "Invalid compatibility set: $CONTAINERD_SET. Valid range: 0-$((${#COMPATIBILITY_SETS[@]}-1))"
+    fi
 }
 
 check_root() {
@@ -40,15 +95,80 @@ add_docker_repository() {
 }
 
 install_containerd() {
-    log "Installing containerd..."
+    log "Installing containerd $CONTAINERD_VERSION..."
     
-    if command -v dnf >/dev/null 2>&1; then
-        dnf install -y containerd.io
-    elif command -v yum >/dev/null 2>&1; then
-        yum install -y containerd.io
+    # For specific versions, use binary installation
+    if [[ "$CONTAINERD_VERSION" != "latest" ]]; then
+        install_containerd_binary
+    else
+        # Use package manager for latest
+        if command -v dnf >/dev/null 2>&1; then
+            dnf install -y containerd.io
+        elif command -v yum >/dev/null 2>&1; then
+            yum install -y containerd.io
+        else
+            error "Neither dnf nor yum package manager found"
+        fi
     fi
     
-    log "containerd installed successfully"
+    log "containerd $CONTAINERD_VERSION installed successfully"
+}
+
+install_containerd_binary() {
+    local arch=$(uname -m)
+    case $arch in
+        x86_64) arch="amd64" ;;
+        aarch64) arch="arm64" ;;
+        *) error "Unsupported architecture: $arch" ;;
+    esac
+    
+    local download_url="https://github.com/containerd/containerd/releases/download/v${CONTAINERD_VERSION}/containerd-${CONTAINERD_VERSION}-linux-${arch}.tar.gz"
+    local temp_dir=$(mktemp -d)
+    
+    log "Downloading containerd binary v$CONTAINERD_VERSION for $arch..."
+    curl -L "$download_url" -o "$temp_dir/containerd.tar.gz"
+    
+    log "Extracting and installing containerd..."
+    tar -C /usr/local -xzf "$temp_dir/containerd.tar.gz"
+    
+    # Create symlinks in /usr/bin
+    ln -sf /usr/local/bin/containerd /usr/bin/containerd
+    ln -sf /usr/local/bin/containerd-shim /usr/bin/containerd-shim
+    ln -sf /usr/local/bin/containerd-shim-runc-v1 /usr/bin/containerd-shim-runc-v1
+    ln -sf /usr/local/bin/containerd-shim-runc-v2 /usr/bin/containerd-shim-runc-v2
+    ln -sf /usr/local/bin/ctr /usr/bin/ctr
+    
+    # Install systemd service
+    curl -L https://raw.githubusercontent.com/containerd/containerd/main/containerd.service \
+         -o /etc/systemd/system/containerd.service
+    
+    rm -rf "$temp_dir"
+}
+
+install_runc() {
+    if [[ "$RUNC_VERSION" == "latest" ]]; then
+        log "Installing latest runc from package manager..."
+        if command -v dnf >/dev/null 2>&1; then
+            dnf install -y runc
+        elif command -v yum >/dev/null 2>&1; then
+            yum install -y runc
+        fi
+    else
+        log "Installing runc v$RUNC_VERSION..."
+        local arch=$(uname -m)
+        case $arch in
+            x86_64) arch="amd64" ;;
+            aarch64) arch="arm64" ;;
+            *) error "Unsupported architecture: $arch" ;;
+        esac
+        
+        local download_url="https://github.com/opencontainers/runc/releases/download/v${RUNC_VERSION}/runc.${arch}"
+        curl -L "$download_url" -o /usr/local/bin/runc
+        chmod +x /usr/local/bin/runc
+        ln -sf /usr/local/bin/runc /usr/bin/runc
+    fi
+    
+    log "runc $RUNC_VERSION installed successfully"
 }
 
 configure_containerd() {
@@ -89,11 +209,42 @@ start_containerd() {
 verify_installation() {
     log "Verifying containerd installation..."
     
-    if command -v ctr >/dev/null 2>&1; then
-        ctr version
-        log "containerd installation verified"
+    # Check containerd version
+    if command -v containerd >/dev/null 2>&1; then
+        local version=$(containerd --version | awk '{print $3}' | sed 's/v//')
+        log "containerd version: v$version"
     else
-        error "containerd CLI (ctr) not found"
+        error "containerd not found"
+    fi
+    
+    # Check runc version
+    if command -v runc >/dev/null 2>&1; then
+        local runc_ver=$(runc --version | head -1 | awk '{print $3}')
+        log "runc version: $runc_ver"
+    else
+        error "runc not found"
+    fi
+    
+    # Check ctr version
+    if command -v ctr >/dev/null 2>&1; then
+        local ctr_ver=$(ctr --version | awk '{print $3}' | sed 's/v//')
+        log "ctr version: v$ctr_ver"
+    else
+        warning "ctr not found"
+    fi
+    
+    # Check if containerd service is enabled
+    if systemctl is-enabled --quiet containerd; then
+        log "containerd service is enabled"
+    else
+        error "containerd service is not enabled"
+    fi
+    
+    # Check if containerd is running
+    if systemctl is-active --quiet containerd; then
+        log "containerd service is running"
+    else
+        warning "containerd service is not running"
     fi
     
     # Check if containerd socket is available
@@ -102,6 +253,9 @@ verify_installation() {
     else
         error "containerd socket not found"
     fi
+    
+    # Verify compatibility set
+    log "Installed versions match compatibility set $CONTAINERD_SET: $SET_DESCRIPTION"
 }
 
 cleanup_packages() {
@@ -116,22 +270,74 @@ cleanup_packages() {
     log "Package cleanup completed"
 }
 
+show_help() {
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  --help, -h              Show this help message"
+    echo "  --list-sets, -l         List available compatibility sets"
+    echo "  --set N                 Use compatibility set N (0-$((${#COMPATIBILITY_SETS[@]}-1)))"
+    echo ""
+    echo "Environment Variables:"
+    echo "  CONTAINERD_SET          Compatibility set number (default: 0)"
+    echo ""
+    echo "Examples:"
+    echo "  $0                      # Use default set (Latest Stable)"
+    echo "  $0 --set 1              # Use set 1 (Stable LTS)"
+    echo "  CONTAINERD_SET=3 $0     # Use set 3 (RHEL 8.10 Tested)"
+}
+
 main() {
+    # Parse command line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --help|-h)
+                show_help
+                exit 0
+                ;;
+            --list-sets|-l)
+                show_compatibility_sets
+                exit 0
+                ;;
+            --set)
+                CONTAINERD_SET="$2"
+                shift 2
+                ;;
+            *)
+                error "Unknown option: $1. Use --help for usage information."
+                ;;
+        esac
+    done
+    
     log "Starting containerd installation..."
     
     check_root
     check_os
+    parse_compatibility_set
+    show_compatibility_sets
+    
+    echo ""
+    read -p "Proceed with installation? (y/N): " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        log "Installation cancelled."
+        exit 0
+    fi
+    
     add_docker_repository
     install_containerd
+    install_runc
     configure_containerd
     start_containerd
     verify_installation
     cleanup_packages
     
     log "containerd installation completed successfully!"
+    log "Compatibility set $CONTAINERD_SET installed: $SET_DESCRIPTION"
     log "containerd is now ready for Kubernetes installation"
     
     # Display containerd status
+    echo ""
     log "containerd service status:"
     systemctl status containerd --no-pager -l
 }
