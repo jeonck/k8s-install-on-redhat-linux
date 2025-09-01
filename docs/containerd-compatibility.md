@@ -99,6 +99,27 @@ sudo ./scripts/install-containerd.sh --help
 - ❓ 테스트되지 않음
 - ✅✅ 특별히 최적화됨
 
+## 오프라인 설치 지원
+
+온프레미스 환경을 위한 오프라인 설치를 지원합니다:
+
+```bash
+# 다운로드 링크 및 정보 확인
+sudo ./scripts/install-containerd.sh --set 3 --download-info
+
+# 오프라인 모드 실행
+OFFLINE_MODE=true sudo ./scripts/install-containerd.sh --set 3
+```
+
+상세한 오프라인 설치 방법은 [오프라인 설치 가이드](offline-installation.md)를 참조하세요.
+
+## 보안 권장사항
+
+### runc 버전 주의사항
+- **runc 1.1.x**: 공식 지원 종료 (보안 업데이트 없음)
+- **권장**: runc 1.2.x 이상으로 업그레이드
+- **CVE-2024-21626**: runc 1.1.12에 보안 패치 포함됨
+
 ## 문제 해결
 
 ### 버전 불일치 문제

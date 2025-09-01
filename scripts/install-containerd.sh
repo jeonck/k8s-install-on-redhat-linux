@@ -17,6 +17,23 @@ COMPATIBILITY_SETS=(
 # Default compatibility set (index 0)
 CONTAINERD_SET=${CONTAINERD_SET:-"0"}
 
+# Offline mode flag
+OFFLINE_MODE=${OFFLINE_MODE:-"false"}
+
+# Download URLs and checksums for offline installation
+declare -A DOWNLOAD_URLS=(
+    ["1.7.22"]="https://github.com/containerd/containerd/releases/download/v1.7.22/containerd-1.7.22-linux-amd64.tar.gz"
+    ["1.7.20"]="https://github.com/containerd/containerd/releases/download/v1.7.20/containerd-1.7.20-linux-amd64.tar.gz"
+    ["1.6.33"]="https://github.com/containerd/containerd/releases/download/v1.6.33/containerd-1.6.33-linux-amd64.tar.gz"
+    ["1.7.27"]="https://github.com/containerd/containerd/releases/download/v1.7.27/containerd-1.7.27-linux-amd64.tar.gz"
+)
+
+declare -A RUNC_DOWNLOAD_URLS=(
+    ["1.1.14"]="https://github.com/opencontainers/runc/releases/download/v1.1.14/runc.amd64"
+    ["1.1.12"]="https://github.com/opencontainers/runc/releases/download/v1.1.12/runc.amd64"
+    ["1.1.9"]="https://github.com/opencontainers/runc/releases/download/v1.1.9/runc.amd64"
+)
+
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
@@ -47,10 +64,41 @@ show_compatibility_sets() {
             echo "  [$i]   containerd $containerd_ver + runc $runc_ver + ctr $ctr_ver"
         fi
         echo "      → $description"
+        
+        # Show security warnings for deprecated runc versions
+        if [[ "$runc_ver" =~ ^1\.1\. ]]; then
+            echo "      ⚠️  runc 1.1.x is no longer supported (security risk)"
+        fi
     done
     echo ""
     echo "Usage: CONTAINERD_SET=1 ./install-containerd.sh"
+    echo "       OFFLINE_MODE=true ./install-containerd.sh"
     echo "Current selection: Set $CONTAINERD_SET"
+}
+
+show_download_info() {
+    echo ""
+    log "Offline Installation Download Information:"
+    echo ""
+    echo "containerd $CONTAINERD_VERSION:"
+    if [[ -n "${DOWNLOAD_URLS[$CONTAINERD_VERSION]}" ]]; then
+        echo "  URL: ${DOWNLOAD_URLS[$CONTAINERD_VERSION]}"
+    else
+        echo "  URL: Use package manager (dnf/yum install containerd.io)"
+    fi
+    echo ""
+    echo "runc $RUNC_VERSION:"
+    if [[ -n "${RUNC_DOWNLOAD_URLS[$RUNC_VERSION]}" ]]; then
+        echo "  URL: ${RUNC_DOWNLOAD_URLS[$RUNC_VERSION]}"
+    else
+        echo "  URL: Use package manager (dnf/yum install runc)"
+    fi
+    echo ""
+    if [[ "$RUNC_VERSION" =~ ^1\.1\. ]]; then
+        warning "runc $RUNC_VERSION is no longer officially supported!"
+        echo "  Consider upgrading to runc 1.2.x or 1.3.x for security updates"
+        echo "  runc 1.1.x will not receive security patches"
+    fi
 }
 
 parse_compatibility_set() {
@@ -277,14 +325,19 @@ show_help() {
     echo "  --help, -h              Show this help message"
     echo "  --list-sets, -l         List available compatibility sets"
     echo "  --set N                 Use compatibility set N (0-$((${#COMPATIBILITY_SETS[@]}-1)))"
+    echo "  --offline               Enable offline mode (show download info)"
+    echo "  --download-info         Show download URLs and exit"
     echo ""
     echo "Environment Variables:"
     echo "  CONTAINERD_SET          Compatibility set number (default: 0)"
+    echo "  OFFLINE_MODE            Enable offline mode (true/false, default: false)"
     echo ""
     echo "Examples:"
     echo "  $0                      # Use default set (Latest Stable)"
     echo "  $0 --set 1              # Use set 1 (Stable LTS)"
-    echo "  CONTAINERD_SET=3 $0     # Use set 3 (RHEL 8.10 Tested)"
+    echo "  $0 --offline            # Show download info for offline installation"
+    echo "  CONTAINERD_SET=3 $0     # Use set 3 (RHEL 8.10 Optimized)"
+    echo "  OFFLINE_MODE=true $0    # Enable offline mode"
 }
 
 main() {
@@ -303,6 +356,15 @@ main() {
                 CONTAINERD_SET="$2"
                 shift 2
                 ;;
+            --offline)
+                OFFLINE_MODE="true"
+                shift
+                ;;
+            --download-info)
+                parse_compatibility_set
+                show_download_info
+                exit 0
+                ;;
             *)
                 error "Unknown option: $1. Use --help for usage information."
                 ;;
@@ -315,6 +377,14 @@ main() {
     check_os
     parse_compatibility_set
     show_compatibility_sets
+    
+    # Show download info in offline mode
+    if [[ "$OFFLINE_MODE" == "true" ]]; then
+        show_download_info
+        echo ""
+        log "Offline mode enabled. Please manually download binaries before proceeding."
+        echo ""
+    fi
     
     echo ""
     read -p "Proceed with installation? (y/N): " -n 1 -r

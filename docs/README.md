@@ -124,6 +124,20 @@ sudo ./scripts/install-containerd.sh --set 3
 
 자세한 내용은 [containerd 호환성 가이드](containerd-compatibility.md)를 참조하세요.
 
+## 오프라인 설치
+
+인터넷 연결이 제한된 온프레미스 환경에서의 설치를 지원합니다:
+
+```bash
+# 오프라인 설치 가이드 및 다운로드 링크 확인
+sudo ./scripts/install-containerd.sh --download-info
+
+# 오프라인 모드로 실행 (다운로드 정보 표시)
+sudo ./scripts/install-containerd.sh --offline
+```
+
+상세한 오프라인 설치 방법은 [오프라인 설치 가이드](offline-installation.md)를 참조하세요.
+
 ## CNI 플러그인
 
 ### Flannel (기본값)
