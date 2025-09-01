@@ -20,8 +20,13 @@
 - **nftables**: v1.0.1+ (nftables 모드 사용시)
 - **컨테이너 런타임**: containerd (Docker 지원 안함)
 
+### RHEL 8.10 특별 권장사항
+- **Kubernetes 1.30**: RHEL 8.10에서 완전 테스트됨, 안정적 사용 가능
+- **사용법**: `K8S_VERSION=1.30 ./scripts/install-kubernetes.sh`
+
 > **RHEL 8.x 사용자 주의사항**: 
-> - RHEL 8.x는 4.18 커널을 사용하지만 Red Hat의 백포팅으로 일부 기능 지원
+> - **RHEL 8.10**: Kubernetes 1.30 사용 권장 (완전 호환)
+> - **RHEL 8.x 기타**: 4.18 커널이지만 백포팅으로 일부 기능 지원
 > - 개발/테스트 환경에서 먼저 검증 후 사용 권장
 > - 프로덕션 환경에서는 RHEL 9.2+ (5.14 커널) 사용 권장
 

@@ -131,6 +131,11 @@
 - **백포팅 기능**: Red Hat이 5.x 기능을 4.18에 백포팅
 - **nftables 지원**: 백포팅을 통해 제한적 지원 가능
 
+#### RHEL 8.10 특별 권장사항
+- **Kubernetes 1.30**: RHEL 8.10에서 완전히 테스트되고 안정적
+- **Kubernetes 1.33**: 백포팅된 기능으로 동작 가능하지만 검증 필요
+- **사용법**: `K8S_VERSION=1.30 ./install-kubernetes.sh`
+
 #### 일반 요구사항
 - **최소**: Linux 커널 3.10 이상
 - **권장**: Linux 커널 5.13 이상 (Kubernetes 1.33)

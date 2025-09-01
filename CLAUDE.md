@@ -23,13 +23,17 @@ sudo ./scripts/prerequisites.sh
 sudo ./scripts/install-containerd.sh
 
 # Install Kubernetes components (kubeadm, kubelet, kubectl)
+# Default: Kubernetes 1.33 with Calico CNI
 sudo ./scripts/install-kubernetes.sh
 
-# Initialize master node with Flannel CNI
+# For RHEL 8.10: Use Kubernetes 1.30 (recommended)
+K8S_VERSION=1.30 sudo ./scripts/install-kubernetes.sh
+
+# Initialize master node with Calico CNI (default)
 sudo ./scripts/setup-master-node.sh
 
-# Initialize master node with Calico CNI
-sudo ./scripts/setup-master-node.sh --cni-plugin calico --pod-network-cidr 192.168.0.0/16
+# Initialize master node with specific pod network CIDR
+sudo ./scripts/setup-master-node.sh --pod-network-cidr 192.168.0.0/16
 
 # Join worker node to cluster
 sudo ./scripts/setup-worker-node.sh "kubeadm join 192.168.1.100:6443 --token xxx..."

@@ -5,6 +5,19 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 K8S_VERSION=${K8S_VERSION:-"1.33"}
 
+# Auto-detect RHEL 8.10 and suggest Kubernetes 1.30
+detect_rhel_version() {
+    if [[ -f /etc/redhat-release ]]; then
+        if grep -q "Red Hat.*release 8\.10" /etc/redhat-release; then
+            if [[ "$K8S_VERSION" == "1.33" ]]; then
+                log "RHEL 8.10 detected. Kubernetes 1.30 is more compatible with RHEL 8.x kernel 4.18"
+                log "Consider using: K8S_VERSION=1.30 ./install-kubernetes.sh"
+                log "Continuing with Kubernetes $K8S_VERSION..."
+            fi
+        fi
+    fi
+}
+
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
@@ -147,6 +160,7 @@ main() {
     
     check_root
     check_os
+    detect_rhel_version
     check_containerd
     add_kubernetes_repository
     install_kubernetes_components

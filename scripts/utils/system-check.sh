@@ -226,10 +226,18 @@ check_kernel_version() {
     
     # Special handling for RHEL 8.x with 4.18 kernel
     if [[ $kernel_major -eq 4 && $kernel_minor -eq 18 ]] && grep -q "Red Hat.*release 8" /etc/redhat-release 2>/dev/null; then
-        warning "! RHEL 8.x detected with kernel 4.18"
-        log "  Red Hat backports features to 4.18 - some Kubernetes 1.33 features may work"
-        log "  Consider testing in development environment first"
-        log "  For production, RHEL 9.2+ (kernel 5.14+) is recommended"
+        if grep -q "Red Hat.*release 8\.10" /etc/redhat-release 2>/dev/null; then
+            warning "! RHEL 8.10 detected with kernel 4.18"
+            log "  RHEL 8.10 is well-tested and stable for Kubernetes"
+            log "  Kubernetes 1.30 is highly recommended for RHEL 8.10"
+            log "  Kubernetes 1.33 may work with backported features but not fully tested"
+            log "  Use: K8S_VERSION=1.30 ./install-kubernetes.sh"
+        else
+            warning "! RHEL 8.x detected with kernel 4.18"
+            log "  Red Hat backports features to 4.18 - some Kubernetes 1.33 features may work"
+            log "  Consider testing in development environment first"
+            log "  For production, RHEL 9.2+ (kernel 5.14+) is recommended"
+        fi
         issues=$((issues + 1))
     # Check for Kubernetes 1.33 requirements
     elif [[ $kernel_major -lt 5 ]] || [[ $kernel_major -eq 5 && $kernel_minor -lt 13 ]]; then
