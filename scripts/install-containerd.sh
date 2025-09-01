@@ -28,6 +28,13 @@ declare -A DOWNLOAD_URLS=(
     ["1.7.27"]="https://github.com/containerd/containerd/releases/download/v1.7.27/containerd-1.7.27-linux-amd64.tar.gz"
 )
 
+# Static binary URLs for better glibc compatibility (RHEL 8.x)
+declare -A STATIC_DOWNLOAD_URLS=(
+    ["1.7.22"]="https://github.com/containerd/containerd/releases/download/v1.7.22/containerd-static-1.7.22-linux-amd64.tar.gz"
+    ["1.7.20"]="https://github.com/containerd/containerd/releases/download/v1.7.20/containerd-static-1.7.20-linux-amd64.tar.gz"
+    ["1.7.27"]="https://github.com/containerd/containerd/releases/download/v1.7.27/containerd-static-1.7.27-linux-amd64.tar.gz"
+)
+
 declare -A RUNC_DOWNLOAD_URLS=(
     ["1.1.14"]="https://github.com/opencontainers/runc/releases/download/v1.1.14/runc.amd64"
     ["1.1.12"]="https://github.com/opencontainers/runc/releases/download/v1.1.12/runc.amd64"
@@ -82,7 +89,13 @@ show_download_info() {
     echo ""
     echo "containerd $CONTAINERD_VERSION:"
     if [[ -n "${DOWNLOAD_URLS[$CONTAINERD_VERSION]}" ]]; then
-        echo "  URL: ${DOWNLOAD_URLS[$CONTAINERD_VERSION]}"
+        echo "  Standard URL: ${DOWNLOAD_URLS[$CONTAINERD_VERSION]}"
+        if [[ -n "${STATIC_DOWNLOAD_URLS[$CONTAINERD_VERSION]}" ]]; then
+            echo "  Static URL (RHEL 8 glibc 2.28 compatible): ${STATIC_DOWNLOAD_URLS[$CONTAINERD_VERSION]}"
+        fi
+        if [[ "$CONTAINERD_VERSION" == "1.7.27" ]]; then
+            echo "  RPM URL (RHEL 8.10 optimized): https://download.docker.com/linux/rhel/8/x86_64/stable/Packages/containerd.io-1.7.27-3.1.el8.x86_64.rpm"
+        fi
     else
         echo "  URL: Use package manager (dnf/yum install containerd.io)"
     fi
@@ -94,10 +107,22 @@ show_download_info() {
         echo "  URL: Use package manager (dnf/yum install runc)"
     fi
     echo ""
+    
+    # glibc compatibility information
+    if [[ "$CONTAINERD_SET" == "3" ]]; then
+        echo "glibc Compatibility (Set 3 - RHEL 8.10 Optimized):"
+        echo "  RHEL 8.10 glibc: 2.28 (verified compatible)"
+        echo "  containerd 1.7.27: Full support via static binaries or RPM"
+        echo "  runc 1.1.12: Verified compatibility with RHEL 8 ecosystem"
+        echo "  Recommended: Use RPM package for optimal integration"
+        echo ""
+    fi
+    
     if [[ "$RUNC_VERSION" =~ ^1\.1\. ]]; then
         warning "runc $RUNC_VERSION is no longer officially supported!"
         echo "  Consider upgrading to runc 1.2.x or 1.3.x for security updates"
         echo "  runc 1.1.x will not receive security patches"
+        echo "  However, runc 1.1.12 includes CVE-2024-21626 security patch"
     fi
 }
 

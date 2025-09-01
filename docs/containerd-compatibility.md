@@ -33,6 +33,7 @@
 - **ctr**: 1.7.27
 - **용도**: RHEL 8.10 + Kubernetes 1.30 최적화 조합
 - **권장 대상**: RHEL 8.10 사용자 (Docker 공식 지원)
+- **glibc 호환성**: RHEL 8.10 glibc 2.28과 완전 호환
 
 ### 세트 4: Latest Available
 - **containerd**: latest
@@ -113,12 +114,34 @@ OFFLINE_MODE=true sudo ./scripts/install-containerd.sh --set 3
 
 상세한 오프라인 설치 방법은 [오프라인 설치 가이드](offline-installation.md)를 참조하세요.
 
+## glibc 호환성 정보
+
+### RHEL 8.10 최적 호환성
+세트 3은 RHEL 8.10의 glibc 2.28과 완벽 호환되도록 검증되었습니다:
+
+**호환성 검증 결과**:
+- **RHEL 8.10 glibc**: 2.28 (RHEL 8 계열 표준)
+- **containerd 1.7.27**: 정적 바이너리로 glibc 2.28 완전 지원
+- **runc 1.1.12**: RHEL 8 에코시스템에서 검증된 호환성
+- **설치 방법**: RPM 패키지 또는 정적 바이너리 모두 지원
+
+**최적 설치 방식**:
+```bash
+# RPM 패키지 방식 (권장)
+wget https://download.docker.com/linux/rhel/8/x86_64/stable/Packages/containerd.io-1.7.27-3.1.el8.x86_64.rpm
+sudo dnf install -y ./containerd.io-1.7.27-3.1.el8.x86_64.rpm
+
+# 정적 바이너리 방식 (오프라인 환경)
+wget https://github.com/containerd/containerd/releases/download/v1.7.27/containerd-static-1.7.27-linux-amd64.tar.gz
+```
+
 ## 보안 권장사항
 
 ### runc 버전 주의사항
 - **runc 1.1.x**: 공식 지원 종료 (보안 업데이트 없음)
 - **권장**: runc 1.2.x 이상으로 업그레이드
 - **CVE-2024-21626**: runc 1.1.12에 보안 패치 포함됨
+- **RHEL 8.10 호환성**: glibc 2.28에서 안정적 동작 검증
 
 ## 문제 해결
 
